@@ -11,7 +11,7 @@ namespace LargoLibrary
 {
     public static class LargoGenerator
     {
-        public static SlimeAppearance CombineAppearances(Identifiable.Id slime1, Identifiable.Id slime2, SlimeDefinition largoDefinition, GameObject largoGameobject)
+        public static SlimeAppearance CombineAppearances(Identifiable.Id slime1, Identifiable.Id slime2, SlimeDefinition largoDefinition, GameObject largoGameobject, bool radLargo = false)
         {
             SlimeAppearance baseAppearance = SRSingleton<GameContext>.Instance.SlimeDefinitions.GetSlimeByIdentifiableId(slime1).AppearancesDefault[0];
             SlimeAppearance addonAppearance = SRSingleton<GameContext>.Instance.SlimeDefinitions.GetSlimeByIdentifiableId(slime2).AppearancesDefault[0];
@@ -25,7 +25,7 @@ namespace LargoLibrary
                 addonAppearance
             };
             SlimeAppearanceStructure[] structures = largoAppearance.Structures;
-            if (slime2 == Identifiable.Id.PINK_RAD_LARGO)
+            if (radLargo)
             {
                 foreach (SlimeAppearanceStructure slimeAppearanceStructure in structures)
                 {
@@ -132,7 +132,13 @@ namespace LargoLibrary
                     }
                 }
 
-                SlimeAppearance largoAppearance = CombineAppearances(slime1, slime2, largoDefinition, largoGameobject);
+                SlimeAppearance largoAppearance;
+                if (slime1 == Identifiable.Id.RAD_SLIME)
+                    largoAppearance = CombineAppearances(Identifiable.Id.PINK_RAD_LARGO, slime2, largoDefinition, largoGameobject, true);
+                else if (slime2 == Identifiable.Id.RAD_SLIME)
+                    largoAppearance = CombineAppearances(slime1, Identifiable.Id.PINK_RAD_LARGO, largoDefinition, largoGameobject, true);
+                else
+                    largoAppearance = CombineAppearances(slime1, slime2, largoDefinition, largoGameobject);
 
                 LookupRegistry.RegisterIdentifiablePrefab(largoGameobject);
                 SlimeRegistry.RegisterSlimeDefinition(largoDefinition);
