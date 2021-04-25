@@ -11,6 +11,8 @@ namespace LargoLibrary
 {
     public static class LargoGenerator
     {
+        public static List<Identifiable.Id> generatedIds = new List<Identifiable.Id>();
+
         public static SlimeAppearance CombineAppearances(Identifiable.Id slime1, Identifiable.Id slime2, SlimeDefinition largoDefinition, GameObject largoGameobject, bool radLargo = false)
         {
             SlimeAppearance baseAppearance = SRSingleton<GameContext>.Instance.SlimeDefinitions.GetSlimeByIdentifiableId(slime1).AppearancesDefault[0];
@@ -88,79 +90,73 @@ namespace LargoLibrary
 
         public static bool CreateLargo(Identifiable.Id slime1, Identifiable.Id slime2, Identifiable.Id largoId)
         {
-            try
+            GameObject baseObject = SRSingleton<GameContext>.Instance.LookupDirector.GetPrefab(slime1);
+            SlimeDefinition baseDefinition = SRSingleton<GameContext>.Instance.SlimeDefinitions.GetSlimeByIdentifiableId(slime1);
+            SlimeAppearance baseAppearance = baseDefinition.AppearancesDefault[0];
+
+            GameObject addonObject = SRSingleton<GameContext>.Instance.LookupDirector.GetPrefab(slime2);
+            SlimeDefinition addonDefinition = SRSingleton<GameContext>.Instance.SlimeDefinitions.GetSlimeByIdentifiableId(slime2);
+            SlimeAppearance addonAppearance = addonDefinition.AppearancesDefault[0];
+
+            SlimeDefinition largoDefinition = ScriptableObject.CreateInstance<SlimeDefinition>();
+            largoDefinition.AppearancesDefault = new SlimeAppearance[1];
+            largoDefinition.BaseModule = baseDefinition.BaseModule;
+            largoDefinition.BaseSlimes = new SlimeDefinition[2]
             {
-                GameObject baseObject = SRSingleton<GameContext>.Instance.LookupDirector.GetPrefab(slime1);
-                SlimeDefinition baseDefinition = SRSingleton<GameContext>.Instance.SlimeDefinitions.GetSlimeByIdentifiableId(slime1);
-                SlimeAppearance baseAppearance = baseDefinition.AppearancesDefault[0];
-
-                GameObject addonObject = SRSingleton<GameContext>.Instance.LookupDirector.GetPrefab(slime2);
-                SlimeDefinition addonDefinition = SRSingleton<GameContext>.Instance.SlimeDefinitions.GetSlimeByIdentifiableId(slime2);
-                SlimeAppearance addonAppearance = addonDefinition.AppearancesDefault[0];
-
-                SlimeDefinition largoDefinition = ScriptableObject.CreateInstance<SlimeDefinition>();
-                largoDefinition.AppearancesDefault = new SlimeAppearance[1];
-                largoDefinition.BaseModule = baseDefinition.BaseModule;
-                largoDefinition.BaseSlimes = new SlimeDefinition[2]
-                {
                     baseDefinition,
                     addonDefinition
-                };
-                largoDefinition.CanLargofy = false;
-                largoDefinition.Diet = SlimeDiet.Combine(addonDefinition.Diet, baseDefinition.Diet);
-                largoDefinition.FavoriteToys = addonDefinition.FavoriteToys.Union(baseDefinition.FavoriteToys).ToArray();
-                largoDefinition.IdentifiableId = largoId;
-                largoDefinition.IsLargo = false;
-                largoDefinition.PrefabScale = 2;
-                largoDefinition.SlimeModules = baseDefinition.SlimeModules;
-                largoDefinition.Sounds = baseDefinition.Sounds;
+            };
+            largoDefinition.CanLargofy = false;
+            largoDefinition.Diet = SlimeDiet.Combine(addonDefinition.Diet, baseDefinition.Diet);
+            largoDefinition.FavoriteToys = addonDefinition.FavoriteToys.Union(baseDefinition.FavoriteToys).ToArray();
+            largoDefinition.IdentifiableId = largoId;
+            largoDefinition.IsLargo = false;
+            largoDefinition.PrefabScale = 2;
+            largoDefinition.SlimeModules = baseDefinition.SlimeModules;
+            largoDefinition.Sounds = baseDefinition.Sounds;
 
-                GameObject largoGameobject = PrefabUtils.CopyPrefab(addonObject);
-                largoGameobject.transform.localScale = new Vector3(2f, 2f, 2f);
-                largoGameobject.GetComponent<PlayWithToys>().slimeDefinition = largoDefinition;
-                largoGameobject.GetComponent<SlimeAppearanceApplicator>().SlimeDefinition = largoDefinition;
-                largoGameobject.GetComponent<SlimeEat>().slimeDefinition = largoDefinition;
-                largoGameobject.GetComponent<Identifiable>().id = largoId;
-                largoGameobject.GetComponent<Vacuumable>().size = Vacuumable.Size.LARGE;
+            GameObject largoGameobject = PrefabUtils.CopyPrefab(addonObject);
+            largoGameobject.transform.localScale = new Vector3(2f, 2f, 2f);
+            largoGameobject.GetComponent<PlayWithToys>().slimeDefinition = largoDefinition;
+            largoGameobject.GetComponent<SlimeAppearanceApplicator>().SlimeDefinition = largoDefinition;
+            largoGameobject.GetComponent<SlimeEat>().slimeDefinition = largoDefinition;
+            largoGameobject.GetComponent<Identifiable>().id = largoId;
+            largoGameobject.GetComponent<Vacuumable>().size = Vacuumable.Size.LARGE;
 
-                foreach (Component component in baseObject.GetComponents(typeof(Component)))
-                {
-                    Type type = component.GetType();
-                    if (largoGameobject.GetComponent(type) == null)
-                    {
-                        largoGameobject.AddComponent(type).GetCopyOf(component);
-                    }
-                }
-
-                SlimeAppearance largoAppearance;
-                if (slime1 == Identifiable.Id.RAD_SLIME)
-                    largoAppearance = CombineAppearances(Identifiable.Id.PINK_RAD_LARGO, slime2, largoDefinition, largoGameobject, true);
-                else if (slime2 == Identifiable.Id.RAD_SLIME)
-                    largoAppearance = CombineAppearances(slime1, Identifiable.Id.PINK_RAD_LARGO, largoDefinition, largoGameobject, true);
-                else
-                    largoAppearance = CombineAppearances(slime1, slime2, largoDefinition, largoGameobject);
-
-                LookupRegistry.RegisterIdentifiablePrefab(largoGameobject);
-                SlimeRegistry.RegisterSlimeDefinition(largoDefinition);
-                Identifiable.LARGO_CLASS.Add(largoId);
-
-                string[] name = largoId.ToString().ToLower().Split('_');
-                int i = 0;
-                foreach (string namePiece in name)
-                {
-                    name[i] = namePiece[0].ToString().ToUpper() + namePiece.Substring(1);
-                    i++;
-                }
-                string finalName = string.Join(" ", name).Replace("Slime", "Largo");
-
-                TranslationPatcher.AddActorTranslation("l." + largoId.ToString().ToLower(), finalName);
-
-                return true;
-            }
-            catch (Exception e)
+            foreach (Component component in baseObject.GetComponents(typeof(Component)))
             {
-                throw e;
+                Type type = component.GetType();
+                if (largoGameobject.GetComponent(type) == null)
+                {
+                    largoGameobject.AddComponent(type).GetCopyOf(component);
+                }
             }
+
+            SlimeAppearance largoAppearance;
+            if (slime1 == Identifiable.Id.RAD_SLIME)
+                largoAppearance = CombineAppearances(Identifiable.Id.PINK_RAD_LARGO, slime2, largoDefinition, largoGameobject, true);
+            else if (slime2 == Identifiable.Id.RAD_SLIME)
+                largoAppearance = CombineAppearances(slime1, Identifiable.Id.PINK_RAD_LARGO, largoDefinition, largoGameobject, true);
+            else
+                largoAppearance = CombineAppearances(slime1, slime2, largoDefinition, largoGameobject);
+
+            LookupRegistry.RegisterIdentifiablePrefab(largoGameobject);
+            SlimeRegistry.RegisterSlimeDefinition(largoDefinition);
+            Identifiable.LARGO_CLASS.Add(largoId);
+
+            string[] name = largoId.ToString().ToLower().Split('_');
+            int i = 0;
+            foreach (string namePiece in name)
+            {
+                name[i] = namePiece[0].ToString().ToUpper() + namePiece.Substring(1);
+                i++;
+            }
+            string finalName = string.Join(" ", name).Replace("Slime", "Largo");
+
+            TranslationPatcher.AddActorTranslation("l." + largoId.ToString().ToLower(), finalName);
+            generatedIds.Add(largoId);
+
+            return true;
         }
 
     }
