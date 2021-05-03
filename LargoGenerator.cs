@@ -85,10 +85,10 @@ namespace LargoLibrary
                 largoAppearance.VineAppearance = addonAppearance.VineAppearance;
             }
 
-            return addonAppearance;
+            return largoAppearance;
         }
 
-        public static bool CreateLargo(Identifiable.Id slime1, Identifiable.Id slime2, Identifiable.Id largoId)
+        public static bool CreateLargo(Identifiable.Id slime1, Identifiable.Id slime2, Identifiable.Id largoId, bool useSecondaryAppearanceAsMain = false)
         {
             GameObject baseObject = SRSingleton<GameContext>.Instance.LookupDirector.GetPrefab(slime1);
             SlimeDefinition baseDefinition = SRSingleton<GameContext>.Instance.SlimeDefinitions.GetSlimeByIdentifiableId(slime1);
@@ -103,8 +103,8 @@ namespace LargoLibrary
             largoDefinition.BaseModule = baseDefinition.BaseModule;
             largoDefinition.BaseSlimes = new SlimeDefinition[2]
             {
-                    baseDefinition,
-                    addonDefinition
+                baseDefinition,
+                addonDefinition
             };
             largoDefinition.CanLargofy = false;
             largoDefinition.Diet = SlimeDiet.Combine(addonDefinition.Diet, baseDefinition.Diet);
@@ -138,7 +138,12 @@ namespace LargoLibrary
             else if (slime2 == Identifiable.Id.RAD_SLIME)
                 largoAppearance = CombineAppearances(slime1, Identifiable.Id.PINK_RAD_LARGO, largoDefinition, largoGameobject, true);
             else
-                largoAppearance = CombineAppearances(slime1, slime2, largoDefinition, largoGameobject);
+            {
+                if (useSecondaryAppearanceAsMain)
+                    largoAppearance = CombineAppearances(slime2, slime1, largoDefinition, largoGameobject);
+                else
+                    largoAppearance = CombineAppearances(slime1, slime2, largoDefinition, largoGameobject);
+            }
 
             LookupRegistry.RegisterIdentifiablePrefab(largoGameobject);
             SlimeRegistry.RegisterSlimeDefinition(largoDefinition);

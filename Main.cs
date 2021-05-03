@@ -8,6 +8,8 @@ namespace LargoLibrary
 {
     public class Main : ModEntryPoint
     {
+        public static Version Version = new Version(1, 3);
+
         public override void PreLoad()
         {
             HarmonyInstance.PatchAll();
@@ -17,6 +19,7 @@ namespace LargoLibrary
         {
 
         }
+
         public override void PostLoad()
         {
 
