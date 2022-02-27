@@ -2,7 +2,7 @@
 using System.Reflection;
 using UnityEngine;
 
-namespace MoreLargos
+namespace LargoLibrary
 {
     public static class GameObjectExtend
     {

@@ -5,6 +5,5 @@ namespace LargoLibrary
     [EnumHolder]
     class Id
     {
-
     }
 }
